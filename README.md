@@ -2,33 +2,15 @@
 
 Worked examples for [mxRaven](https://mxraven.com), the programmable email
 platform: SMTP submission, inbound webhooks, MIME parsing, and React template
-rendering. Each stack is a runnable app where every example is its own endpoint
-or page, with an interactive demo and the code behind it.
+rendering. Each stack is a runnable app with every example implemented as its
+own endpoint or page, a demo UI, and the code behind it.
 
 ## Stacks
 
-| Stack | Path | Guide |
-| --- | --- | --- |
-| Next.js (TypeScript, App Router) | [`nextjs/typescript`](./nextjs/typescript) | [`README`](./nextjs/typescript/README.md) |
+| Stack | Runtime |
+| --- | --- |
+| [Next.js](./nextjs/typescript) | TypeScript, App Router |
 
-New stacks can be added alongside `nextjs/`, each keeping the same example set
-and environment contract.
-
-## Examples
-
-The Next.js app covers:
-
-| Example | Page | Source |
-| --- | --- | --- |
-| Send an email (text + HTML) | `/send-email` | `nextjs/typescript/app/api/send-email/route.ts` |
-| React templates | `/send-react` | `nextjs/typescript/app/api/send-react/route.tsx` |
-| Server action | `/server-action` | `nextjs/typescript/app/server-action/actions.tsx` |
-| Attachments (file + inline `cid:`) | `/send-attachments` | `nextjs/typescript/app/api/send-attachments/route.ts` |
-| Delivery deadlines and DSNs | `/send-delivery-by` | `nextjs/typescript/app/api/send-delivery-by/route.ts` |
-| Raw messages | `/send-raw` | `nextjs/typescript/app/api/send-raw/route.ts` |
-| Contact form | `/contact` | `nextjs/typescript/app/api/contact/route.tsx` |
-| Webhooks (verify, dispatch, live feed) | `/webhooks` | `nextjs/typescript/app/api/webhook/route.ts` |
-| Parse inbound mail | `/parse-inbound` | `nextjs/typescript/app/api/parse-inbound/route.ts` |
 
 ## Getting started
 
@@ -39,7 +21,8 @@ cp .env.example .env   # fill in your mxRaven credentials
 bun dev
 ```
 
-Open http://localhost:3000 for the interactive walkthrough.
+Open http://localhost:3000 for the interactive walkthrough. The stack guide
+lists every example with its page and source file.
 
 ## Environment
 
