@@ -1,0 +1,120 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "mxRaven Next.js examples",
+};
+
+interface ExampleLink {
+  href: string;
+  title: string;
+  description: string;
+}
+
+const groups: { heading: string; items: ExampleLink[] }[] = [
+  {
+    heading: "Sending",
+    items: [
+      {
+        href: "/send-email",
+        title: "Send an email",
+        description: "Plain text, or multipart/alternative with an HTML body.",
+      },
+      {
+        href: "/send-react",
+        title: "React templates",
+        description: "Render a React component with @mxraven/react.",
+      },
+      {
+        href: "/server-action",
+        title: "Server action",
+        description: "Send from a form with a \"use server\" action.",
+      },
+      {
+        href: "/send-attachments",
+        title: "Attachments",
+        description: "Files and inline images referenced with cid:.",
+      },
+      {
+        href: "/send-delivery-by",
+        title: "Delivery deadlines",
+        description: "DELIVERBY, RET, and ENVID envelope parameters.",
+      },
+      {
+        href: "/send-raw",
+        title: "Raw messages",
+        description: "Stream pre-serialized RFC 5322 bytes.",
+      },
+      {
+        href: "/contact",
+        title: "Contact form",
+        description: "A form that emails you with Reply-To set.",
+      },
+    ],
+  },
+  {
+    heading: "Receiving",
+    items: [
+      {
+        href: "/webhooks",
+        title: "Webhooks",
+        description: "Verify signatures and handle inbound and delivery events.",
+      },
+      {
+        href: "/parse-inbound",
+        title: "Parse inbound mail",
+        description: "Decode MIME into headers, bodies, and attachments.",
+      },
+    ],
+  },
+];
+
+export default function Home() {
+  return (
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-12 px-6 py-16">
+      <header className="flex flex-col gap-3">
+        <p className="text-sm font-medium uppercase tracking-widest text-zinc-500">
+          @mxraven/mail · @mxraven/react
+        </p>
+        <h1 className="text-4xl font-semibold tracking-tight">mxRaven Next.js examples</h1>
+        <p className="max-w-2xl text-zinc-600 dark:text-zinc-400">
+          Every example has its own page with the code and a working demo. Copy{" "}
+          <code className="rounded bg-black/[.06] px-1.5 py-0.5 dark:bg-white/[.08]">.env.example</code> to{" "}
+          <code className="rounded bg-black/[.06] px-1.5 py-0.5 dark:bg-white/[.08]">.env</code>, fill in your
+          credentials, then open an example below.
+        </p>
+      </header>
+
+      {groups.map((group) => (
+        <section key={group.heading} className="flex flex-col gap-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">{group.heading}</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {group.items.map((example) => (
+              <Link
+                key={example.href}
+                href={example.href}
+                className="group flex flex-col gap-2 rounded-xl border border-black/10 p-5 transition-colors hover:border-black/30 dark:border-white/15 dark:hover:border-white/40"
+              >
+                <span className="text-lg font-medium">{example.title}</span>
+                <span className="text-sm text-zinc-600 dark:text-zinc-400">{example.description}</span>
+                <span className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                  Open example
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 16 16"
+                    className="size-4 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path d="M6 3.5 10.5 8 6 12.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ))}
+    </main>
+  );
+}
