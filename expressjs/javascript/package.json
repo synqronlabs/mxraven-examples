@@ -1,0 +1,16 @@
+{
+  "name": "mxraven-examples-express-javascript",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js"
+  },
+  "dependencies": {
+    "@mxraven/mail": "^0.2.4",
+    "express": "^5.1.0"
+  }
+}

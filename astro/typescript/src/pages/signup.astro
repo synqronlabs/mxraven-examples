@@ -1,0 +1,180 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+
+const request = `import { Client, Message, SMTPError } from "@mxraven/mail";
+import { createOtp, normalizeEmail, otpTtlMs } from "../../../lib/otp";
+
+export const POST = async ({ request }) => {
+  const { email: rawEmail, name = "there" } = await request.json();
+
+  const email = normalizeEmail(rawEmail);
+  if (email === "") {
+    return Response.json({ error: "\`email\` is required." }, { status: 400 });
+  }
+
+  // Generates the code and stores only its SHA-256 hash (10 minute TTL).
+  const otp = createOtp(email);
+
+  const client = new Client({
+    host: import.meta.env.MXRAVEN_HOST,
+    username: import.meta.env.MXRAVEN_USERNAME,
+    secret: import.meta.env.MXRAVEN_SECRET,
+  });
+
+  const message = new Message()
+    .from(\`Acme <\${import.meta.env.MXRAVEN_MAIL_FROM}>\`)
+    .to(email)
+    .subject("Your verification code")
+    .text(\`Hi \${name},\\n\\nYour verification code is \${otp}.\`);
+
+  try {
+    const result = await client.send(message);
+    return Response.json({ ok: true, messageRef: result.messageRef, expiresInSeconds: otpTtlMs / 1000 });
+  } catch (error) {
+    if (error instanceof SMTPError) {
+      return Response.json({ error: error.message, code: error.code }, { status: 502 });
+    }
+    throw error;
+  } finally {
+    await client.close();
+  }
+};`;
+
+const verify = `import { normalizeEmail, verifyOtp } from "../../../lib/otp";
+
+export const POST = async ({ request }) => {
+  const { email: rawEmail, otp } = await request.json();
+
+  const email = normalizeEmail(rawEmail);
+  if (email === "" || otp === undefined || otp === "") {
+    return Response.json({ error: "\`email\` and \`otp\` are required." }, { status: 400 });
+  }
+
+  // Constant-time comparison, attempt limit, and one-time consumption.
+  const result = verifyOtp(email, otp);
+  if (!result.ok) {
+    return Response.json({ error: result.error }, { status: result.status });
+  }
+
+  return Response.json({ ok: true, verified: true, email });
+};`;
+---
+
+<Layout title="Signup OTP | mxRaven examples">
+  <ExamplePage
+    title="Signup OTP"
+    description="Email a one-time code and verify it. The code is generated with a CSPRNG, only its SHA-256 hash is stored (10 minute TTL, 5 attempts), and it is consumed on success. The code is never returned in the response; for local testing it is printed to the server console."
+    snippets={[
+      { title: "Request", label: "src/pages/api/signup/request-otp.ts", code: request },
+      { title: "Verify", label: "src/pages/api/signup/verify-otp.ts", code: verify },
+    ]}
+  >
+    <div class="flex flex-col gap-8">
+      <form id="otp-request-form" class="flex flex-col gap-4">
+        <h3 class="text-sm font-semibold uppercase tracking-widest text-zinc-500">1. Request a code</h3>
+        <label class="flex flex-col gap-1 text-sm font-medium">
+          <span>Email</span>
+          <input type="email" name="email" required placeholder="you@example.com" class={inputClass} />
+        </label>
+        <label class="flex flex-col gap-1 text-sm font-medium">
+          <span>Name</span>
+          <input name="name" value="Ada" class={inputClass} />
+        </label>
+        <button type="submit" class={buttonClass}>Send code</button>
+        <div id="otp-request-result"></div>
+      </form>
+
+      <form id="otp-verify-form" class="flex flex-col gap-4">
+        <h3 class="text-sm font-semibold uppercase tracking-widest text-zinc-500">2. Verify the code</h3>
+        <label class="flex flex-col gap-1 text-sm font-medium">
+          <span>Email</span>
+          <input type="email" name="email" required placeholder="you@example.com" class={inputClass} />
+        </label>
+        <label class="flex flex-col gap-1 text-sm font-medium">
+          <span>Code <span class="ml-2 font-normal text-zinc-500">6 digits from the email</span></span>
+          <input
+            name="otp"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="6"
+            placeholder="123456"
+            class={inputClass}
+          />
+        </label>
+        <button type="submit" class={buttonClass}>Verify code</button>
+        <p class="text-sm text-zinc-500">
+          The code is printed to the server console for local testing.
+        </p>
+        <div id="otp-verify-result"></div>
+      </form>
+    </div>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { renderResult } from "../lib/runner";
+
+  async function submitJson(form, endpoint, result) {
+    const button = form.querySelector("button[type=submit]");
+    if (button instanceof HTMLButtonElement) button.disabled = true;
+    renderResult(result, { status: "running" });
+
+    try {
+      const values = Object.fromEntries(new FormData(form));
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        renderResult(result, {
+          status: "error",
+          message: payload?.error ?? `Request failed with status ${response.status}.`,
+          payload,
+        });
+        return false;
+      }
+
+      renderResult(result, { status: "done", payload });
+      return true;
+    } catch (error) {
+      renderResult(result, {
+        status: "error",
+        message: error instanceof Error ? error.message : "Could not reach the server.",
+      });
+      return false;
+    } finally {
+      if (button instanceof HTMLButtonElement) button.disabled = false;
+    }
+  }
+
+  const requestForm = document.getElementById("otp-request-form");
+  const requestResult = document.getElementById("otp-request-result");
+  const verifyForm = document.getElementById("otp-verify-form");
+  const verifyResult = document.getElementById("otp-verify-result");
+
+  if (requestForm instanceof HTMLFormElement && requestResult instanceof HTMLElement) {
+    requestForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const ok = await submitJson(requestForm, "/api/signup/request-otp", requestResult);
+      if (ok && verifyForm instanceof HTMLFormElement) {
+        const email = new FormData(requestForm).get("email");
+        const verifyEmail = verifyForm.querySelector("input[name=email]");
+        if (typeof email === "string" && verifyEmail instanceof HTMLInputElement) {
+          verifyEmail.value = email;
+        }
+      }
+    });
+  }
+
+  if (verifyForm instanceof HTMLFormElement && verifyResult instanceof HTMLElement) {
+    verifyForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await submitJson(verifyForm, "/api/signup/verify-otp", verifyResult);
+    });
+  }
+</script>

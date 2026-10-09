@@ -20,7 +20,7 @@ Bun loads `.env` automatically, so `process.env` works in every script.
 | `bun run send:email <to>` | Plain text plus an HTML alternative |
 | `bun run send:template <to> [name]` | Rendered from a plain template renderer |
 | `bun run send:attachments <to>` | File attachment and inline `cid:` image |
-| `bun run send:delivery-by <to> [seconds] [N\|R] [envid]` | `DELIVERBY`, DSN, and extra MAIL FROM parameters |
+| `bun run send:delivery-by <to> [seconds] [N\|R] [envid]` | `DELIVERBY` and DSN envelope parameters |
 | `bun run send:raw <to>` | Pre-serialized RFC 5322 bytes with per-recipient DSNs |
 | `bun run feedback <spam\|ham> <file.eml>` | Trains the spam filter with exact raw bytes |
 | `bun run feedback unsubscribe <token>` | RFC 8058 one-click unsubscribe |

@@ -34,8 +34,8 @@ export async function sendDeliveryBy(
       // Ask for the full message on a DSN and tag the envelope for tracking.
       dsnRet: "FULL",
       envid,
-      // Extra MAIL FROM parameters are passed through verbatim.
-      extensionParams: new Map([["X-CUSTOM", "node-example"]]),
+      // `extensionParams` can add other MAIL FROM parameters, but servers
+      // reject any parameter they do not advertise.
     });
     console.log(`Accepted as ${result.messageRef} (envid ${envid})`);
     return result.messageRef;

@@ -11,6 +11,8 @@ own endpoint or page, a demo UI, and the code behind it.
 | --- | --- |
 | Next.js | [TypeScript](./nextjs/typescript) · [JavaScript](./nextjs/javascript) |
 | Astro | [TypeScript](./astro/typescript) · [JavaScript](./astro/javascript) |
+| Nuxt | [TypeScript](./nuxtjs/typescript) |
+| Express | [TypeScript](./expressjs/typescript) · [JavaScript](./expressjs/javascript) |
 | Bun | [TypeScript](./bun) |
 | Node.js | [TypeScript](./node) |
 

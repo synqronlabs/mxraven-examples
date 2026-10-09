@@ -21,7 +21,7 @@ extensions, which Node's type stripping requires.
 | `npm run send:email <to>` | Plain text plus an HTML alternative |
 | `npm run send:template <to> [name]` | Rendered from a plain template renderer |
 | `npm run send:attachments <to>` | File attachment and inline `cid:` image |
-| `npm run send:delivery-by <to> [seconds] [N\|R] [envid]` | `DELIVERBY`, DSN, and extra MAIL FROM parameters |
+| `npm run send:delivery-by <to> [seconds] [N\|R] [envid]` | `DELIVERBY` and DSN envelope parameters |
 | `npm run send:raw <to>` | Pre-serialized RFC 5322 bytes with per-recipient DSNs |
 | `npm run feedback <spam\|ham> <file.eml>` | Trains the spam filter with exact raw bytes |
 | `npm run feedback unsubscribe <token>` | RFC 8058 one-click unsubscribe |

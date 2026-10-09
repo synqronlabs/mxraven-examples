@@ -43,6 +43,7 @@ both. Secrets are read at request time; nothing is evaluated at build time.
 | Delivery deadlines | `/send-delivery-by` | `app/api/send-delivery-by/route.js` | `DELIVERBY`, `RET`, `ENVID` envelope parameters |
 | Raw messages | `/send-raw` | `app/api/send-raw/route.js` | `sendRaw` with serialized RFC 5322 bytes |
 | Contact form | `/contact` | `app/api/contact/route.jsx` | React-rendered notification with `Reply-To` |
+| Signup OTP | `/signup` | `app/api/signup/*/route.js` | One-time codes emailed with `@mxraven/mail` |
 | Webhooks | `/webhooks` | `app/api/webhook/route.js` | Signature verification, typed event dispatch, live feed |
 | Parse inbound mail | `/parse-inbound` | `app/api/parse-inbound/route.js` | `parseEmail` for headers, bodies, and attachments |
 
@@ -60,6 +61,16 @@ curl -s localhost:3000/api/send-email \
 `DELIVERBY` and DSN parameters require server support and fail before transfer
 when unsupported. `SMTPError.permanent` (5xx) means do not retry;
 `SMTPError.transient` (4xx) may succeed later.
+
+## Signup OTP
+
+`POST /api/signup/request-otp` generates a 6-digit code with a CSPRNG, stores
+only its SHA-256 hash in memory (10 minute TTL, 5 attempts), and emails the
+code with `@mxraven/mail`. The code is never returned in the response; for
+local testing it is printed to the server console. `POST
+/api/signup/verify-otp` compares in constant time and consumes the code on
+success. The in-memory store is for the demo only; production flows should use
+a database or cache with rate limits. Try it at `/signup`.
 
 ## Receiving
 

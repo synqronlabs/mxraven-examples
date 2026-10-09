@@ -43,6 +43,7 @@ both.
 | Delivery deadlines | `/send-delivery-by` | `src/pages/api/send-delivery-by.js` | `DELIVERBY`, `RET`, `ENVID` envelope parameters |
 | Raw messages | `/send-raw` | `src/pages/api/send-raw.js` | `sendRaw` with serialized RFC 5322 bytes |
 | Contact form | `/contact` | `src/pages/api/contact.js` | React-rendered notification with `Reply-To` |
+| Signup OTP | `/signup` | `src/pages/api/signup/*.js` | One-time codes emailed with `@mxraven/mail` |
 | Webhooks | `/webhooks` | `src/pages/api/webhook.js` | Signature verification, typed event dispatch, live feed |
 | Parse inbound mail | `/parse-inbound` | `src/pages/api/parse-inbound.js` | `parseEmail` for headers, bodies, and attachments |
 
@@ -51,6 +52,16 @@ both.
 All send endpoints accept JSON and return the server's `messageRef`. Every
 endpoint creates its own client from the environment and closes it in
 `finally`.
+
+## Signup OTP
+
+`POST /api/signup/request-otp` generates a 6-digit code with a CSPRNG, stores
+only its SHA-256 hash in memory (10 minute TTL, 5 attempts), and emails the
+code with `@mxraven/mail`. The code is never returned in the response; for
+local testing it is printed to the server console. `POST
+/api/signup/verify-otp` compares in constant time and consumes the code on
+success. The in-memory store is for the demo only; production flows should use
+a database or cache with rate limits. Try it at `/signup`.
 
 ```bash
 curl -s localhost:4321/api/send-email \

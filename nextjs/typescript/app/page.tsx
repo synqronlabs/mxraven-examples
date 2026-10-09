@@ -50,6 +50,11 @@ const groups: { heading: string; items: ExampleLink[] }[] = [
         title: "Contact form",
         description: "A form that emails you with Reply-To set.",
       },
+      {
+        href: "/signup",
+        title: "Signup OTP",
+        description: "Email a one-time code and verify it.",
+      },
     ],
   },
   {
