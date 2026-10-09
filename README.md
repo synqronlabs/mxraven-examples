@@ -10,6 +10,7 @@ own endpoint or page, a demo UI, and the code behind it.
 | Stack | Runtime |
 | --- | --- |
 | [Next.js](./nextjs/typescript) | TypeScript, App Router |
+| [Next.js](./nextjs/javascript) | JavaScript, App Router |
 
 
 ## Getting started
