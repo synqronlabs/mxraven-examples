@@ -1,0 +1,127 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+
+const code = `import { Client, Message } from "@mxraven/mail";
+
+const client = new Client({
+  host: import.meta.env.MXRAVEN_HOST,
+  username: import.meta.env.MXRAVEN_USERNAME,
+  secret: import.meta.env.MXRAVEN_SECRET,
+});
+
+const message = new Message()
+  .from(import.meta.env.MXRAVEN_MAIL_FROM)
+  .to(to)
+  .subject("Delivery deadline example")
+  .text("This message asks mxRaven to apply a delivery deadline.");
+
+try {
+  const result = await client.send(message, {
+    // RFC 2852 DELIVERBY: N notifies, R returns the message at the deadline
+    deliveryBy: { seconds, mode },
+    // RFC 3461 DSN options
+    dsnRet: "FULL",
+    envid,
+  });
+  console.log(result.messageRef);
+} finally {
+  await client.close();
+}`;
+
+const segmentedButton =
+  "rounded-md px-3 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-black/25 dark:focus-visible:ring-white/30";
+---
+
+<Layout title="Delivery deadlines | mxRaven examples">
+  <ExamplePage
+    title="Delivery deadlines and DSNs"
+    description="Ask mxRaven to apply a delivery deadline and to report back through DSNs. The server must advertise DELIVERBY and DSN, otherwise send fails before transfer."
+    snippets={[{ label: "src/pages/api/send-delivery-by.ts", code }]}
+  >
+    <form id="send-delivery-by-form" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>To</span>
+        <input type="email" name="to" required placeholder="you@example.com" class={inputClass} />
+      </label>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="flex flex-col gap-1 text-sm font-medium">
+          <span>Deadline <span class="ml-2 font-normal text-zinc-500">seconds</span></span>
+          <input
+            type="text"
+            name="seconds"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            value="3600"
+            class={inputClass}
+          />
+        </label>
+        <div class="flex flex-col gap-1 text-sm font-medium">
+          <span>Mode <span class="ml-2 font-normal text-zinc-500">N notifies, R returns</span></span>
+          <div id="delivery-mode" class="inline-flex self-start rounded-lg border border-black/10 p-1 dark:border-white/15">
+            <button type="button" data-value="R" aria-pressed="true" class={`${segmentedButton} bg-foreground text-background`}>
+              R: return
+            </button>
+            <button
+              type="button"
+              data-value="N"
+              aria-pressed="false"
+              class={`${segmentedButton} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100`}
+            >
+              N: notify
+            </button>
+          </div>
+          <input type="hidden" name="mode" id="delivery-mode-value" value="R" />
+        </div>
+      </div>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>ENVID <span class="ml-2 font-normal text-zinc-500">tracking tag for DSNs</span></span>
+        <input name="envid" value="order-42" class={inputClass} />
+      </label>
+      <button type="submit" class={buttonClass}>Send with deadline</button>
+      <div id="send-delivery-by-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { postJson } from "../lib/runner";
+
+  const segmented = document.getElementById("delivery-mode");
+  const hidden = document.getElementById("delivery-mode-value");
+  if (segmented instanceof HTMLElement && hidden instanceof HTMLInputElement) {
+    const buttons = [...segmented.querySelectorAll("button")];
+    for (const button of buttons) {
+      button.addEventListener("click", () => {
+        for (const other of buttons) {
+          const on = other === button;
+          other.setAttribute("aria-pressed", String(on));
+          other.classList.toggle("bg-foreground", on);
+          other.classList.toggle("text-background", on);
+          other.classList.toggle("text-zinc-500", !on);
+          other.classList.toggle("hover:text-zinc-900", !on);
+          other.classList.toggle("dark:hover:text-zinc-100", !on);
+        }
+        hidden.value = button.dataset.value ?? "R";
+      });
+    }
+  }
+
+  const form = document.getElementById("send-delivery-by-form");
+  const result = document.getElementById("send-delivery-by-result");
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      values.seconds = Number(values.seconds);
+      const button = form.querySelector("button[type=submit]");
+      void postJson(
+        "/api/send-delivery-by",
+        values,
+        result,
+        button instanceof HTMLButtonElement ? button : null,
+      );
+    });
+  }
+</script>

@@ -1,0 +1,27 @@
+{
+  "name": "mxraven-examples-bun",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "send:email": "bun src/examples/send-email.ts",
+    "send:template": "bun src/examples/send-template.ts",
+    "send:attachments": "bun src/examples/send-attachments.ts",
+    "send:delivery-by": "bun src/examples/send-delivery-by.ts",
+    "send:raw": "bun src/examples/send-raw.ts",
+    "feedback": "bun src/examples/feedback.ts",
+    "parse": "bun src/examples/parse-inbound.ts",
+    "all": "bun index.ts",
+    "webhook": "bun src/examples/webhook.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^26.6.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@mxraven/mail": "^0.2.4"
+  }
+}

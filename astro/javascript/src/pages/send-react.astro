@@ -1,0 +1,93 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+import { WelcomeEmail } from "../emails/welcome";
+
+const template = `export function WelcomeEmail({ name }) {
+  return (
+    <div style={{ fontFamily: "Arial, Helvetica, sans-serif", lineHeight: 1.6 }}>
+      <h1 style={{ fontSize: "24px" }}>Welcome, {name}!</h1>
+      <p>
+        This message was rendered from React and sent with <code>@mxraven/mail</code>.
+      </p>
+      <p style={{ color: "#666666" }}>The Acme team</p>
+    </div>
+  );
+}`;
+
+const send = `import { createElement } from "react";
+import { Client, Message } from "@mxraven/mail";
+import { react } from "@mxraven/react";
+import { WelcomeEmail } from "../../emails/welcome";
+
+const client = new Client({
+  host: import.meta.env.MXRAVEN_HOST,
+  username: import.meta.env.MXRAVEN_USERNAME,
+  secret: import.meta.env.MXRAVEN_SECRET,
+});
+
+// Astro endpoints are .js files, so the element is built with createElement.
+const mail = new Message()
+  .from(\`Acme <\${import.meta.env.MXRAVEN_MAIL_FROM}>\`)
+  .to(to)
+  .subject("Welcome to Acme")
+  .render(react(), createElement(WelcomeEmail, { name }));
+
+try {
+  const result = await client.send(mail);
+  console.log(result.messageRef);
+} finally {
+  await client.close();
+}`;
+---
+
+<Layout title="React templates | mxRaven examples">
+  <ExamplePage
+    title="React templates"
+    description="Write the email as a React component and let @mxraven/react render it server-side. The renderer derives the plain-text alternative from the HTML, so the message ships as multipart/alternative."
+    snippets={[
+      { title: "Template", label: "src/emails/welcome.jsx", code: template },
+      { title: "Send", label: "src/pages/api/send-react.js", code: send },
+    ]}
+  >
+    <form id="send-react-form" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>To</span>
+        <input type="email" name="to" required placeholder="you@example.com" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Name</span>
+        <input name="name" value="Ada" class={inputClass} />
+      </label>
+      <div class="flex flex-col gap-2">
+        <span class="text-sm font-medium">Preview</span>
+        <div class="rounded-xl border border-black/10 p-5 dark:border-white/15">
+          <WelcomeEmail name="Ada" />
+        </div>
+      </div>
+      <button type="submit" class={buttonClass}>Send welcome email</button>
+      <div id="send-react-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { postJson } from "../lib/runner";
+
+  const form = document.getElementById("send-react-form");
+  const result = document.getElementById("send-react-result");
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      const button = form.querySelector("button[type=submit]");
+      void postJson(
+        "/api/send-react",
+        values,
+        result,
+        button instanceof HTMLButtonElement ? button : null,
+      );
+    });
+  }
+</script>

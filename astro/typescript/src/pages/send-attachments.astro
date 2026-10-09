@@ -1,0 +1,127 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+
+const code = `import { Client, Message } from "@mxraven/mail";
+
+const client = new Client({
+  host: import.meta.env.MXRAVEN_HOST,
+  username: import.meta.env.MXRAVEN_USERNAME,
+  secret: import.meta.env.MXRAVEN_SECRET,
+});
+
+const report = new TextEncoder().encode("id,name\\n1,Ada\\n2,Alan\\n");
+
+const message = new Message()
+  .from(import.meta.env.MXRAVEN_MAIL_FROM)
+  .to(to)
+  .subject("Your report")
+  .html('<p><img src="cid:logo" alt="Acme logo" /></p>')
+  .attach({ filename: "report.csv", contentType: "text/csv", data: report })
+  .attachInline("logo.png", "logo", logoPng);
+
+try {
+  await client.send(message);
+} finally {
+  await client.close();
+}`;
+---
+
+<Layout title="Attachments | mxRaven examples">
+  <ExamplePage
+    title="Attachments"
+    description="Attach files as Uint8Array bytes, or inline an image the HTML body references with cid:. The SDK wraps bodies and attachments in multipart/mixed automatically."
+    snippets={[{ label: "src/pages/api/send-attachments.ts", code }]}
+  >
+    <form id="send-attachments-form" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>To</span>
+        <input type="email" name="to" required placeholder="you@example.com" class={inputClass} />
+      </label>
+      <p class="text-sm text-zinc-600 dark:text-zinc-400">
+        Every message includes a generated <code>report.csv</code> and an inline <code>logo.png</code> reference.
+      </p>
+      <div class="flex flex-col gap-1 text-sm font-medium">
+        <span>Your own file <span class="ml-2 font-normal text-zinc-500">optional</span></span>
+        <div class="flex flex-wrap items-center gap-3">
+          <input id="attachment-file" type="file" class="sr-only" />
+          <label
+            for="attachment-file"
+            class="cursor-pointer rounded-md border border-black/10 px-3 py-2 text-sm font-medium outline-none transition-colors hover:border-black/30 focus-within:border-black/30 dark:border-white/15 dark:hover:border-white/40 dark:focus-within:border-white/40"
+          >
+            Choose file
+          </label>
+          <span id="attachment-file-name" class="text-sm font-normal text-zinc-500">No file chosen</span>
+          <button
+            id="attachment-file-remove"
+            type="button"
+            class="hidden text-sm font-normal text-zinc-500 underline-offset-4 transition-colors hover:text-zinc-900 hover:underline dark:hover:text-zinc-100"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+      <button type="submit" class={buttonClass}>Send with attachments</button>
+      <div id="send-attachments-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { postJson } from "../lib/runner";
+
+  const form = document.getElementById("send-attachments-form");
+  const result = document.getElementById("send-attachments-result");
+  const fileInput = document.getElementById("attachment-file");
+  const fileName = document.getElementById("attachment-file-name");
+  const fileRemove = document.getElementById("attachment-file-remove");
+
+  async function fileToBase64(file) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = "";
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+  }
+
+  if (fileInput instanceof HTMLInputElement && fileName instanceof HTMLElement) {
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0] ?? null;
+      fileName.textContent = file === null ? "No file chosen" : file.name;
+      if (fileRemove instanceof HTMLElement) {
+        fileRemove.classList.toggle("hidden", file === null);
+      }
+    });
+  }
+
+  if (fileRemove instanceof HTMLButtonElement && fileInput instanceof HTMLInputElement) {
+    fileRemove.addEventListener("click", () => {
+      fileInput.value = "";
+      fileInput.dispatchEvent(new Event("change"));
+    });
+  }
+
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      const file = fileInput instanceof HTMLInputElement ? fileInput.files?.[0] : undefined;
+      if (file !== undefined) {
+        values.file = {
+          filename: file.name,
+          contentType: file.type === "" ? undefined : file.type,
+          dataBase64: await fileToBase64(file),
+        };
+      }
+      const button = form.querySelector("button[type=submit]");
+      void postJson(
+        "/api/send-attachments",
+        values,
+        result,
+        button instanceof HTMLButtonElement ? button : null,
+      );
+    });
+  }
+</script>

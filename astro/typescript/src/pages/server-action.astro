@@ -1,0 +1,106 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+
+const action = `import { ActionError, defineAction } from "astro:actions";
+import { z } from "astro:schema";
+import { createElement } from "react";
+import { Client, Message, SMTPError } from "@mxraven/mail";
+import { react } from "@mxraven/react";
+import { WelcomeEmail } from "../emails/welcome";
+
+export const server = {
+  sendWelcome: defineAction({
+    accept: "form",
+    input: z.object({
+      to: z.string().email(),
+      name: z.string().optional(),
+    }),
+    handler: async ({ to, name }) => {
+      const client = new Client({
+        host: import.meta.env.MXRAVEN_HOST,
+        username: import.meta.env.MXRAVEN_USERNAME,
+        secret: import.meta.env.MXRAVEN_SECRET,
+      });
+
+      const mail = new Message()
+        .from(\`Acme <\${import.meta.env.MXRAVEN_MAIL_FROM}>\`)
+        .to(to)
+        .subject("Welcome to Acme")
+        .render(react(), createElement(WelcomeEmail, { name: name || "there" }));
+
+      try {
+        const result = await client.send(mail);
+        return { messageRef: result.messageRef };
+      } catch (error) {
+        if (error instanceof SMTPError) {
+          throw new ActionError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        }
+        throw error;
+      } finally {
+        await client.close();
+      }
+    },
+  }),
+};`;
+
+const client = `import { actions } from "astro:actions";
+
+const { data, error } = await actions.sendWelcome(new FormData(form));
+
+if (error) {
+  console.error(error.message);
+} else {
+  console.log("accepted as", data.messageRef);
+}`;
+---
+
+<Layout title="Server action | mxRaven examples">
+  <ExamplePage
+    title="Server action"
+    description="Send mail straight from a form with an Astro action instead of a fetch call. The action validates the input with a schema, runs on the server, sends the React template, and returns a result."
+    snippets={[
+      { title: "Action", label: "src/actions/index.ts", code: action },
+      { title: "Client", label: "page script", code: client },
+    ]}
+  >
+    <form id="server-action-form" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>To</span>
+        <input type="email" name="to" required placeholder="you@example.com" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Name</span>
+        <input name="name" value="Ada" class={inputClass} />
+      </label>
+      <button type="submit" class={buttonClass}>Send welcome email</button>
+      <div id="server-action-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { actions } from "astro:actions";
+  import { renderResult } from "../lib/runner";
+
+  const form = document.getElementById("server-action-form");
+  const result = document.getElementById("server-action-result");
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = form.querySelector("button[type=submit]");
+      if (button instanceof HTMLButtonElement) button.disabled = true;
+      renderResult(result, { status: "running" });
+
+      const { data, error } = await actions.sendWelcome(new FormData(form));
+
+      if (error) {
+        renderResult(result, { status: "error", message: error.message });
+      } else {
+        renderResult(result, { status: "done", payload: data });
+      }
+      if (button instanceof HTMLButtonElement) button.disabled = false;
+    });
+  }
+</script>

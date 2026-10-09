@@ -1,0 +1,127 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+
+const route = `import { fetchAndParseRawEmail } from "@mxraven/mail/mime";
+import { WebhookHandler, eventType } from "@mxraven/mail/webhook";
+
+const webhook = new WebhookHandler({ secret: import.meta.env.MXRAVEN_WEBHOOK_SECRET });
+
+webhook.on(eventType.inboundEmail, async (email) => {
+  const parsed = await fetchAndParseRawEmail(email.raw_email);
+  console.log(parsed.subject, parsed.attachments.length);
+});
+
+webhook.on(eventType.deliveryStatus, (status) => {
+  console.log(status.task_id, status.status);
+});
+
+// Astro endpoints receive a standard Request.
+export const POST = ({ request }) => webhook.handle(request);`;
+---
+
+<Layout title="Webhooks | mxRaven examples">
+  <ExamplePage
+    title="Webhooks"
+    description="mxRaven signs every delivery with an HMAC over the timestamp, webhook ID, method, host, path, and body. This app is the HTTP server: the endpoint below verifies each POST, decodes the payload, and dispatches typed events. Expose it with a tunnel and point a real webhook endpoint at it; deliveries appear in the live feed."
+    snippets={[{ label: "src/pages/api/webhook.ts", code: route }]}
+  >
+    <div class="flex flex-col gap-6">
+      <div class="rounded-xl border border-black/10 p-5 text-sm dark:border-white/15">
+        <p class="font-medium">Point real traffic at this listener</p>
+        <ol class="mt-3 flex list-decimal flex-col gap-1.5 pl-5 text-zinc-600 dark:text-zinc-400">
+          <li>Run the app with <code>bun dev</code>.</li>
+          <li>Expose it with a tunnel, for example <code>ngrok http 4321</code>.</li>
+          <li>
+            In mxRaven, create a webhook endpoint pointing at <code>https://&lt;tunnel&gt;/api/webhook</code>.
+          </li>
+          <li>
+            Copy its signing secret into <code>MXRAVEN_WEBHOOK_SECRET</code> in <code>.env</code> and restart.
+          </li>
+        </ol>
+        <p class="mt-3 text-zinc-600 dark:text-zinc-400">Deliveries appear below within a few seconds.</p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="inline-flex items-center gap-2 text-sm font-medium">
+            Live events
+            <span class="inline-flex items-center gap-1.5 text-xs font-normal text-zinc-500">
+              <span class="size-1.5 animate-pulse rounded-full bg-emerald-500"></span>
+              listening
+            </span>
+          </span>
+          <button
+            id="webhook-refresh"
+            type="button"
+            class="text-sm text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <p id="webhook-empty" class="text-sm text-zinc-500">
+          Waiting for deliveries. Events recorded by the listener show up here.
+        </p>
+        <ul
+          id="webhook-events"
+          class="flex flex-col divide-y divide-black/10 rounded-xl border border-black/10 dark:divide-white/10 dark:border-white/15"
+        >
+        </ul>
+      </div>
+    </div>
+  </ExamplePage>
+</Layout>
+
+<script>
+  const list = document.getElementById("webhook-events");
+  const empty = document.getElementById("webhook-empty");
+  const refreshButton = document.getElementById("webhook-refresh");
+
+  async function fetchEvents() {
+    const response = await fetch("/api/webhook/events", { cache: "no-store" });
+    return response.ok ? await response.json() : [];
+  }
+
+  function renderEvents(events) {
+    if (!(list instanceof HTMLElement) || !(empty instanceof HTMLElement)) return;
+    list.replaceChildren();
+    empty.classList.toggle("hidden", events.length > 0);
+
+    for (const event of events) {
+      const item = document.createElement("li");
+      item.className = "flex flex-col gap-1 p-4";
+
+      const row = document.createElement("div");
+      row.className = "flex flex-wrap items-center gap-x-3 gap-y-1";
+
+      const badge = document.createElement("span");
+      badge.className =
+        "rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-xs font-semibold dark:bg-white/[.08]";
+      badge.textContent = event.type;
+
+      const time = document.createElement("span");
+      time.className = "text-xs text-zinc-500";
+      time.textContent = new Date(event.receivedAt).toLocaleTimeString();
+
+      row.append(badge, time);
+
+      const summary = document.createElement("span");
+      summary.className = "text-sm text-zinc-700 dark:text-zinc-300";
+      summary.textContent = event.summary;
+
+      item.append(row, summary);
+      list.append(item);
+    }
+  }
+
+  async function refresh() {
+    renderEvents(await fetchEvents());
+  }
+
+  void refresh();
+  setInterval(() => void refresh(), 3000);
+  if (refreshButton instanceof HTMLButtonElement) {
+    refreshButton.addEventListener("click", () => void refresh());
+  }
+</script>

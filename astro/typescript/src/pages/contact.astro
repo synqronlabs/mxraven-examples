@@ -1,0 +1,76 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+
+const code = `import { createElement } from "react";
+import { Client, Message } from "@mxraven/mail";
+import { react } from "@mxraven/react";
+import { ContactEmail } from "../../emails/contact";
+
+const client = new Client({
+  host: import.meta.env.MXRAVEN_HOST,
+  username: import.meta.env.MXRAVEN_USERNAME,
+  secret: import.meta.env.MXRAVEN_SECRET,
+});
+
+const mail = new Message()
+  .from(import.meta.env.MXRAVEN_MAIL_FROM)
+  .to(import.meta.env.MXRAVEN_CONTACT_TO)
+  .replyTo(\`\${name} <\${email}>\`)
+  .subject(\`Contact form: \${name}\`)
+  .render(react(), createElement(ContactEmail, { name, email, message }));
+
+try {
+  const result = await client.send(mail);
+  console.log(result.messageRef);
+} finally {
+  await client.close();
+}`;
+---
+
+<Layout title="Contact form | mxRaven examples">
+  <ExamplePage
+    title="Contact form"
+    description="A form that emails you. The notification is rendered from a React component, and the submitter's address is set as Reply-To so you can answer directly."
+    snippets={[{ label: "src/pages/api/contact.ts", code }]}
+  >
+    <form id="contact-form" class="flex w-full max-w-lg flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Name</span>
+        <input name="name" required autocomplete="name" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Email</span>
+        <input name="email" type="email" required autocomplete="email" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Message</span>
+        <textarea name="message" required rows="5" class={inputClass}></textarea>
+      </label>
+      <button type="submit" class={buttonClass}>Send message</button>
+      <div id="contact-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { postJson } from "../lib/runner";
+
+  const form = document.getElementById("contact-form");
+  const result = document.getElementById("contact-result");
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      const button = form.querySelector("button[type=submit]");
+      const ok = await postJson(
+        "/api/contact",
+        values,
+        result,
+        button instanceof HTMLButtonElement ? button : null,
+      );
+      if (ok) form.reset();
+    });
+  }
+</script>

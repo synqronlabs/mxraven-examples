@@ -1,0 +1,78 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+
+const code = `import { Client } from "@mxraven/mail";
+
+const client = new Client({
+  host: import.meta.env.MXRAVEN_HOST,
+  username: import.meta.env.MXRAVEN_USERNAME,
+  secret: import.meta.env.MXRAVEN_SECRET,
+});
+
+const raw = [
+  \`From: \${from}\`,
+  \`To: \${to}\`,
+  \`Subject: \${subject}\`,
+  "MIME-Version: 1.0",
+  'Content-Type: text/plain; charset="utf-8"',
+  "",
+  text,
+].join("\\r\\n");
+
+try {
+  const result = await client.sendRaw(
+    { from, to: [{ address: to, notify: ["FAILURE", "DELAY"], orcpt: to }] },
+    new TextEncoder().encode(raw),
+  );
+  console.log(result.messageRef);
+} finally {
+  await client.close();
+}`;
+---
+
+<Layout title="Raw messages | mxRaven examples">
+  <ExamplePage
+    title="Raw messages"
+    description="Stream an already serialized RFC 5322 message with an explicit envelope. Use this for large or pre-rendered mail; the SDK does not parse the bytes. The envelope can carry per-recipient DSN options."
+    snippets={[{ label: "src/pages/api/send-raw.js", code }]}
+  >
+    <form id="send-raw-form" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>To</span>
+        <input type="email" name="to" required placeholder="you@example.com" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Subject</span>
+        <input name="subject" value="Raw message example" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Plain text</span>
+        <textarea name="text" rows="4" class={inputClass}>These are pre-serialized RFC 5322 bytes.</textarea>
+      </label>
+      <button type="submit" class={buttonClass}>Send raw message</button>
+      <div id="send-raw-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { postJson } from "../lib/runner";
+
+  const form = document.getElementById("send-raw-form");
+  const result = document.getElementById("send-raw-result");
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      const button = form.querySelector("button[type=submit]");
+      void postJson(
+        "/api/send-raw",
+        values,
+        result,
+        button instanceof HTMLButtonElement ? button : null,
+      );
+    });
+  }
+</script>

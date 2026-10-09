@@ -7,11 +7,12 @@ own endpoint or page, a demo UI, and the code behind it.
 
 ## Stacks
 
-| Stack | Runtime |
+| Stack | Languages |
 | --- | --- |
-| [Next.js](./nextjs/typescript) | TypeScript, App Router |
-| [Next.js](./nextjs/javascript) | JavaScript, App Router |
-
+| Next.js | [TypeScript](./nextjs/typescript) · [JavaScript](./nextjs/javascript) |
+| Astro | [TypeScript](./astro/typescript) · [JavaScript](./astro/javascript) |
+| Bun | [TypeScript](./bun) |
+| Node.js | [TypeScript](./node) |
 
 ## Getting started
 

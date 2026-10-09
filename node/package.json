@@ -1,0 +1,27 @@
+{
+  "name": "mxraven-examples-node",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "send:email": "node --env-file-if-exists=.env src/examples/send-email.ts",
+    "send:template": "node --env-file-if-exists=.env src/examples/send-template.ts",
+    "send:attachments": "node --env-file-if-exists=.env src/examples/send-attachments.ts",
+    "send:delivery-by": "node --env-file-if-exists=.env src/examples/send-delivery-by.ts",
+    "send:raw": "node --env-file-if-exists=.env src/examples/send-raw.ts",
+    "feedback": "node --env-file-if-exists=.env src/examples/feedback.ts",
+    "parse": "node src/examples/parse-inbound.ts",
+    "webhook": "node --env-file-if-exists=.env src/examples/webhook.ts",
+    "all": "node --env-file-if-exists=.env index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mxraven/mail": "^0.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^5.9.3"
+  }
+}

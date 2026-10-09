@@ -1,0 +1,89 @@
+import { createElement } from "react";
+import { Client, Message, SMTPError } from "@mxraven/mail";
+import { react } from "@mxraven/react";
+import { ContactEmail } from "../../emails/contact";
+
+function clean(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * POST /api/contact
+ *
+ * Backs the form at `/contact`. Sends a notification email to
+ * `MXRAVEN_CONTACT_TO` with the submitter's address as `Reply-To`.
+ */
+export const POST = async ({ request }) => {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Request body must be JSON." }, { status: 400 });
+  }
+
+  const name = clean(body.name);
+  const email = clean(body.email);
+  const message = clean(body.message);
+
+  if (name === "" || email === "" || message === "") {
+    return Response.json(
+      { error: "`name`, `email`, and `message` are required." },
+      { status: 400 },
+    );
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return Response.json({ error: "`email` is not a valid address." }, { status: 400 });
+  }
+
+  const host = import.meta.env.MXRAVEN_HOST;
+  const username = import.meta.env.MXRAVEN_USERNAME;
+  const secret = import.meta.env.MXRAVEN_SECRET;
+  const contactTo = import.meta.env.MXRAVEN_CONTACT_TO;
+  if (
+    host === undefined ||
+    username === undefined ||
+    secret === undefined ||
+    contactTo === undefined
+  ) {
+    return Response.json(
+      {
+        error:
+          "Set MXRAVEN_HOST, MXRAVEN_USERNAME, MXRAVEN_SECRET, and MXRAVEN_CONTACT_TO in .env.",
+      },
+      { status: 500 },
+    );
+  }
+
+  const client = new Client({
+    host,
+    port: Number(import.meta.env.MXRAVEN_PORT ?? 587),
+    username,
+    secret,
+  });
+
+  const mail = new Message()
+    .from(import.meta.env.MXRAVEN_MAIL_FROM ?? "noreply@your-domain.example")
+    .to(contactTo)
+    .replyTo(`${name} <${email}>`)
+    .subject(`Contact form: ${name}`)
+    .render(react(), createElement(ContactEmail, { name, email, message }));
+
+  try {
+    const result = await client.send(mail);
+
+    return Response.json({ ok: true, messageRef: result.messageRef });
+  } catch (error) {
+    if (error instanceof SMTPError) {
+      return Response.json(
+        { error: error.message, code: error.code, permanent: error.permanent },
+        { status: error.permanent ? 502 : 503 },
+      );
+    }
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Send failed." },
+      { status: 500 },
+    );
+  } finally {
+    await client.close();
+  }
+};

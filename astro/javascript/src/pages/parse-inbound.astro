@@ -1,0 +1,74 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+import { sampleEmailText } from "../lib/sample-email";
+
+const code = `import { parseEmail } from "@mxraven/mail/mime";
+
+const email = parseEmail(rawBytes);
+
+console.log(email.subject);
+console.log(email.from, email.to);
+console.log(email.attachments.map((a) => a.filename));`;
+---
+
+<Layout title="Parse inbound mail | mxRaven examples">
+  <ExamplePage
+    title="Parse inbound mail"
+    description="Decode raw RFC 5322 / MIME bytes into headers, addresses, text and HTML bodies, and attachments. The parser is lenient with malformed mail and decodes base64, quoted-printable, encoded words, and RFC 2231 parameters."
+    snippets={[{ label: "src/pages/api/parse-inbound.js", code }]}
+  >
+    <form id="parse-inbound-form" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Raw message <span class="ml-2 font-normal text-zinc-500">RFC 5322 / MIME bytes</span></span>
+        <textarea name="raw" rows="12" spellcheck="false" class={`${inputClass} font-mono text-xs leading-5`}
+          >{sampleEmailText}</textarea
+        >
+      </label>
+      <button type="submit" class={buttonClass}>Parse message</button>
+      <div id="parse-inbound-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { renderResult } from "../lib/runner";
+
+  const form = document.getElementById("parse-inbound-form");
+  const result = document.getElementById("parse-inbound-result");
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const textarea = form.querySelector("textarea");
+      const button = form.querySelector("button[type=submit]");
+      if (!(textarea instanceof HTMLTextAreaElement)) return;
+      if (button instanceof HTMLButtonElement) button.disabled = true;
+      renderResult(result, { status: "running" });
+
+      try {
+        const response = await fetch("/api/parse-inbound", {
+          method: "POST",
+          body: textarea.value,
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          renderResult(result, {
+            status: "error",
+            message: payload?.error ?? `Request failed with status ${response.status}.`,
+            payload,
+          });
+        } else {
+          renderResult(result, { status: "done", payload });
+        }
+      } catch (error) {
+        renderResult(result, {
+          status: "error",
+          message: error instanceof Error ? error.message : "Could not reach the server.",
+        });
+      } finally {
+        if (button instanceof HTMLButtonElement) button.disabled = false;
+      }
+    });
+  }
+</script>

@@ -1,0 +1,83 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ExamplePage from "../components/ExamplePage.astro";
+import { inputClass, buttonClass } from "../lib/styles";
+
+const code = `import { Client, Message } from "@mxraven/mail";
+
+// One client per request; close it in \`finally\` to release the pool.
+const client = new Client({
+  host: import.meta.env.MXRAVEN_HOST,
+  port: Number(import.meta.env.MXRAVEN_PORT ?? 587),
+  username: import.meta.env.MXRAVEN_USERNAME,
+  secret: import.meta.env.MXRAVEN_SECRET,
+});
+
+const message = new Message()
+  .from(\`Acme <\${import.meta.env.MXRAVEN_MAIL_FROM}>\`)
+  .to(to)
+  .subject(subject)
+  .text(text);
+
+if (html !== undefined) {
+  // text + html => multipart/alternative
+  message.html(html);
+}
+
+try {
+  const result = await client.send(message);
+  console.log(result.messageRef);
+} finally {
+  await client.close();
+}`;
+---
+
+<Layout title="Send an email | mxRaven examples">
+  <ExamplePage
+    title="Send an email"
+    description="Submit a plain-text message through the SMTP submission client. Add an HTML body and the SDK sends it as multipart/alternative, which improves deliverability."
+    snippets={[{ label: "src/pages/api/send-email.js", code }]}
+  >
+    <form id="send-email-form" class="flex flex-col gap-4">
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>To</span>
+        <input type="email" name="to" required placeholder="you@example.com" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Subject</span>
+        <input name="subject" value="Hello from mxRaven" class={inputClass} />
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>Plain text</span>
+        <textarea name="text" rows="4" class={inputClass}>This message was sent from the mxRaven Astro examples.</textarea>
+      </label>
+      <label class="flex flex-col gap-1 text-sm font-medium">
+        <span>HTML body <span class="ml-2 font-normal text-zinc-500">optional</span></span>
+        <textarea name="html" rows="4" placeholder="<p>Optional HTML alternative</p>" class={inputClass}></textarea>
+      </label>
+      <button type="submit" class={buttonClass}>Send email</button>
+      <div id="send-email-result"></div>
+    </form>
+  </ExamplePage>
+</Layout>
+
+<script>
+  import { postJson } from "../lib/runner";
+
+  const form = document.getElementById("send-email-form");
+  const result = document.getElementById("send-email-result");
+  if (form instanceof HTMLFormElement && result instanceof HTMLElement) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form));
+      if (values.html === "") delete values.html;
+      const button = form.querySelector("button[type=submit]");
+      void postJson(
+        "/api/send-email",
+        values,
+        result,
+        button instanceof HTMLButtonElement ? button : null,
+      );
+    });
+  }
+</script>
