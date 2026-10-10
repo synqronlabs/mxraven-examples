@@ -15,6 +15,7 @@ own endpoint or page, a demo UI, and the code behind it.
 | Express | [TypeScript](./expressjs/typescript) · [JavaScript](./expressjs/javascript) |
 | Bun | [TypeScript](./bun) |
 | Node.js | [TypeScript](./node) |
+| Java | [Plain](./java/plain) · [Spring Boot](./java/spring-boot) |
 
 ## Getting started
 
