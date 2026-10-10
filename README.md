@@ -16,6 +16,7 @@ own endpoint or page, a demo UI, and the code behind it.
 | Bun | [TypeScript](./bun) |
 | Node.js | [TypeScript](./node) |
 | Java | [Plain](./java/plain) · [Spring Boot](./java/spring-boot) |
+| Go | [CLI](./go/cli) · [Gin](./go/gin) |
 
 ## Getting started
 

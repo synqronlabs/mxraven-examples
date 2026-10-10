@@ -1,0 +1,10 @@
+github.com/gofrs/uuid/v5 v5.4.0 h1:EfbpCTjqMuGyq5ZJwxqzn3Cbr2d0rUZU7v5ycAk/e/0=
+github.com/gofrs/uuid/v5 v5.4.0/go.mod h1:CDOjlDMVAtN56jqyRUZh58JT31Tiw7/oQyEXZV+9bD8=
+github.com/philhofer/fwd v1.2.0 h1:e6DnBTl7vGY+Gz322/ASL4Gyp1FspeMvx1RNDoToZuM=
+github.com/philhofer/fwd v1.2.0/go.mod h1:RqIHx9QI14HlwKwm98g9Re5prTQ6LdeRQn+gXJFxsJM=
+github.com/synqronlabs/mxraven-go v0.4.0 h1:tkcCtewhwyZCND4YR4cVwqac/lFRseeig6Oh89ztMZI=
+github.com/synqronlabs/mxraven-go v0.4.0/go.mod h1:EfqaY12D8Jr6e9BBz289703ezlURP0u3wcUAYzRHaLM=
+github.com/synqronlabs/raven v1.6.1 h1:zQsVxhZsNC2quWWVy14I3bJ0jj1jHDkPobg1FUeaZPw=
+github.com/synqronlabs/raven v1.6.1/go.mod h1:bykrvOPq8RCDKS/13uKTn2EdEe9ARDX0MVQdxtHl8tI=
+github.com/tinylib/msgp v1.6.4 h1:mOwYbyYDLPj35mkA2BjjYejgJk9BuHxDdvRnb6v2ZcQ=
+github.com/tinylib/msgp v1.6.4/go.mod h1:RSp0LW9oSxFut3KzESt5Voq4GVWyS+PSulT77roAqEA=
